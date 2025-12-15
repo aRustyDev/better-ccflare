@@ -101,6 +101,53 @@ export function ensureSchema(db: Database): void {
 			updated_at INTEGER NOT NULL
 		)
 	`);
+
+	// Create claude_log_entries table for storing parsed JSONL log entries
+	db.run(`
+		CREATE TABLE IF NOT EXISTS claude_log_entries (
+			uuid TEXT PRIMARY KEY,
+			session_id TEXT NOT NULL,
+			project_path TEXT NOT NULL,
+			timestamp INTEGER NOT NULL,
+			role TEXT NOT NULL,
+			model TEXT,
+			input_tokens INTEGER DEFAULT 0,
+			output_tokens INTEGER DEFAULT 0,
+			cache_creation_input_tokens INTEGER DEFAULT 0,
+			cache_read_input_tokens INTEGER DEFAULT 0,
+			total_tokens INTEGER DEFAULT 0,
+			cost_usd REAL DEFAULT 0,
+			git_branch TEXT,
+			cwd TEXT,
+			file_path TEXT NOT NULL,
+			file_modified_at INTEGER NOT NULL
+		)
+	`);
+
+	// Create indexes for efficient querying
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_claude_entries_session ON claude_log_entries(session_id)`,
+	);
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_claude_entries_timestamp ON claude_log_entries(timestamp DESC)`,
+	);
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_claude_entries_project ON claude_log_entries(project_path)`,
+	);
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_claude_entries_file ON claude_log_entries(file_path)`,
+	);
+
+	// Create claude_processed_files table for incremental processing tracking
+	db.run(`
+		CREATE TABLE IF NOT EXISTS claude_processed_files (
+			file_path TEXT PRIMARY KEY,
+			last_modified_at INTEGER NOT NULL,
+			last_size INTEGER NOT NULL,
+			last_line_count INTEGER NOT NULL,
+			processed_at INTEGER NOT NULL
+		)
+	`);
 }
 
 export function runMigrations(db: Database): void {

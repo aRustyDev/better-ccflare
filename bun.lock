@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "ccflare",
@@ -18,6 +19,7 @@
       "name": "@better-ccflare/server",
       "version": "0.1.0",
       "dependencies": {
+        "@better-ccflare/claude-logs": "workspace:*",
         "@better-ccflare/config": "workspace:*",
         "@better-ccflare/core": "workspace:*",
         "@better-ccflare/core-di": "workspace:*",
@@ -32,7 +34,7 @@
     },
     "apps/tui": {
       "name": "better-ccflare",
-      "version": "1.2.28",
+      "version": "1.2.39",
       "bin": {
         "better-ccflare": "dist/better-ccflare",
       },
@@ -58,6 +60,14 @@
       "devDependencies": {
         "@types/node": "^22.5.4",
         "typescript": "^5.7.2",
+      },
+    },
+    "packages/claude-logs": {
+      "name": "@better-ccflare/claude-logs",
+      "version": "0.1.0",
+      "dependencies": {
+        "@better-ccflare/logger": "workspace:*",
+        "@better-ccflare/types": "workspace:*",
       },
     },
     "packages/cli-commands": {
@@ -157,6 +167,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@better-ccflare/agents": "workspace:*",
+        "@better-ccflare/claude-logs": "workspace:*",
         "@better-ccflare/config": "workspace:*",
         "@better-ccflare/core": "workspace:*",
         "@better-ccflare/database": "workspace:*",
@@ -274,6 +285,8 @@
     "@alcalzone/ansi-tokenize": ["@alcalzone/ansi-tokenize@0.1.3", "", { "dependencies": { "ansi-styles": "^6.2.1", "is-fullwidth-code-point": "^4.0.0" } }, "sha512-3yWxPTq3UQ/FY9p1ErPxIyfT64elWaMvM9lIHnaqpyft63tkxodF5aUElYHrdisWve5cETkh1+KBw1yJuW0aRw=="],
 
     "@better-ccflare/agents": ["@better-ccflare/agents@workspace:packages/agents"],
+
+    "@better-ccflare/claude-logs": ["@better-ccflare/claude-logs@workspace:packages/claude-logs"],
 
     "@better-ccflare/cli-commands": ["@better-ccflare/cli-commands@workspace:packages/cli-commands"],
 
@@ -675,7 +688,7 @@
 
     "yoga-layout": ["yoga-layout@3.2.1", "", {}, "sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ=="],
 
-    "@better-ccflare/dashboard-web/@types/bun": ["@types/bun@1.3.0", "", { "dependencies": { "bun-types": "1.3.0" } }, "sha512-+lAGCYjXjip2qY375xX/scJeVRmZ5cY0wyHYyCYxNcdEXrQ4AOe3gACgd4iQ8ksOslJtW4VNxBJ8llUwc3a6AA=="],
+    "@better-ccflare/dashboard-web/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
 
     "@better-ccflare/errors/@types/bun": ["@types/bun@1.1.15", "", { "dependencies": { "bun-types": "1.1.42" } }, "sha512-Fi7ND1jCq8O5iU3s9z3TKHggD0hidgpe7wSxyisviXpbMmY4B1KiokF3f/mmjOoDrEcf873tSpixgen7Wm9X0g=="],
 
@@ -697,7 +710,7 @@
 
     "slice-ansi/is-fullwidth-code-point": ["is-fullwidth-code-point@5.0.0", "", { "dependencies": { "get-east-asian-width": "^1.0.0" } }, "sha512-OVa3u9kkBbw7b8Xw5F9P+D/T9X+Z4+JruYVNapTjPYZYUznQ5YfWeFkOj606XYYW8yugTfC8Pj0hYqvi4ryAhA=="],
 
-    "@better-ccflare/dashboard-web/@types/bun/bun-types": ["bun-types@1.3.0", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-u8X0thhx+yJ0KmkxuEo9HAtdfgCBaM/aI9K90VQcQioAmkVp3SG3FkwWGibUFz3WdXAdcsqOcbU40lK7tbHdkQ=="],
+    "@better-ccflare/dashboard-web/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
 
     "@better-ccflare/errors/@types/bun/bun-types": ["bun-types@1.1.42", "", { "dependencies": { "@types/node": "~20.12.8", "@types/ws": "~8.5.10" } }, "sha512-beMbnFqWbbBQHll/bn3phSwmoOQmnX2nt8NI9iOQKFbgR5Z6rlH3YuaMdlid8vp5XGct3/W4QVQBmhoOEoe4nw=="],
 

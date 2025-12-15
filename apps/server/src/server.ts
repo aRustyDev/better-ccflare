@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { ClaudeLogsService } from "@better-ccflare/claude-logs";
 import { Config, type RuntimeConfig } from "@better-ccflare/config";
 import {
 	CACHE,
@@ -124,6 +125,7 @@ let stopRetentionJob: (() => void) | null = null;
 let stopOAuthCleanupJob: (() => void) | null = null;
 let stopRateLimitCleanupJob: (() => void) | null = null;
 let autoRefreshScheduler: AutoRefreshScheduler | null = null;
+let claudeLogsServiceInstance: ClaudeLogsService | null = null;
 
 // SSL/TLS configuration
 let tlsEnabled = false;
@@ -366,7 +368,32 @@ export default function startServer(options?: {
 	container.registerInstance(SERVICE_KEYS.PricingLogger, pricingLogger);
 	setPricingLogger(pricingLogger);
 
-	const apiRouter = new APIRouter({ db, config, dbOps });
+	// Initialize Claude logs service if enabled
+	if (config.isClaudeLogsEnabled()) {
+		const claudeLogsRepo = dbOps.getClaudeLogsRepository();
+		claudeLogsServiceInstance = new ClaudeLogsService(claudeLogsRepo);
+
+		// Initialize asynchronously (don't block server startup)
+		claudeLogsServiceInstance
+			.initialize({
+				watchEnabled: config.isClaudeLogsWatchEnabled(),
+				scanOnStartup: config.isClaudeLogsScanOnStartup(),
+				scanIntervalMs: config.getClaudeLogsScanInterval(),
+			})
+			.then(() => {
+				log.info("Claude logs service initialized");
+			})
+			.catch((err) => {
+				log.error("Failed to initialize Claude logs service:", err);
+			});
+	}
+
+	const apiRouter = new APIRouter({
+		db,
+		config,
+		dbOps,
+		claudeLogsService: claudeLogsServiceInstance || undefined,
+	});
 
 	// Run startup maintenance once (cleanup only) - fire and forget
 	runStartupMaintenance(config, dbOps).catch((err) => {
@@ -655,6 +682,10 @@ async function handleGracefulShutdown(signal: string) {
 		if (autoRefreshScheduler) {
 			autoRefreshScheduler.stop();
 			autoRefreshScheduler = null;
+		}
+		if (claudeLogsServiceInstance) {
+			claudeLogsServiceInstance.dispose();
+			claudeLogsServiceInstance = null;
 		}
 		usageCache.clear(); // Stop all usage polling
 		terminateUsageWorker();

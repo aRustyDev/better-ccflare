@@ -58,6 +58,12 @@ export interface ConfigData {
 	db_retry_delay_ms?: number;
 	db_retry_backoff?: number;
 	db_retry_max_delay_ms?: number;
+	// Claude logs configuration
+	claude_logs_enabled?: boolean;
+	claude_logs_watch_enabled?: boolean;
+	claude_logs_scan_on_startup?: boolean;
+	claude_logs_scan_interval_ms?: number;
+	claude_config_dirs?: string;
 	[key: string]: string | number | boolean | undefined;
 }
 
@@ -292,6 +298,86 @@ export class Config extends EventEmitter {
 	setRequestRetentionDays(days: number): void {
 		const clamped = this.clamp(days, 1, 3650);
 		this.set("request_retention_days", clamped);
+	}
+
+	// Claude logs configuration methods
+	isClaudeLogsEnabled(): boolean {
+		const fromEnv = process.env.CLAUDE_LOGS_ENABLED;
+		if (fromEnv !== undefined) {
+			return fromEnv.toLowerCase() === "true" || fromEnv === "1";
+		}
+		if (typeof this.data.claude_logs_enabled === "boolean") {
+			return this.data.claude_logs_enabled;
+		}
+		return true; // Enabled by default
+	}
+
+	setClaudeLogsEnabled(enabled: boolean): void {
+		this.set("claude_logs_enabled", enabled);
+	}
+
+	isClaudeLogsWatchEnabled(): boolean {
+		const fromEnv = process.env.CLAUDE_LOGS_WATCH;
+		if (fromEnv !== undefined) {
+			return fromEnv.toLowerCase() === "true" || fromEnv === "1";
+		}
+		if (typeof this.data.claude_logs_watch_enabled === "boolean") {
+			return this.data.claude_logs_watch_enabled;
+		}
+		return false; // Disabled by default (use polling instead)
+	}
+
+	setClaudeLogsWatchEnabled(enabled: boolean): void {
+		this.set("claude_logs_watch_enabled", enabled);
+	}
+
+	isClaudeLogsScanOnStartup(): boolean {
+		const fromEnv = process.env.CLAUDE_LOGS_SCAN_ON_STARTUP;
+		if (fromEnv !== undefined) {
+			return fromEnv.toLowerCase() === "true" || fromEnv === "1";
+		}
+		if (typeof this.data.claude_logs_scan_on_startup === "boolean") {
+			return this.data.claude_logs_scan_on_startup;
+		}
+		return true; // Enabled by default
+	}
+
+	setClaudeLogsScanOnStartup(enabled: boolean): void {
+		this.set("claude_logs_scan_on_startup", enabled);
+	}
+
+	getClaudeLogsScanInterval(): number {
+		const fromEnv = process.env.CLAUDE_LOGS_SCAN_INTERVAL_MS;
+		if (fromEnv) {
+			const n = parseInt(fromEnv, 10);
+			if (!Number.isNaN(n)) return this.clamp(n, 10000, 3600000); // 10s to 1h
+		}
+		if (typeof this.data.claude_logs_scan_interval_ms === "number") {
+			return this.clamp(this.data.claude_logs_scan_interval_ms, 10000, 3600000);
+		}
+		return 60000; // Default: 1 minute
+	}
+
+	setClaudeLogsScanInterval(ms: number): void {
+		const clamped = this.clamp(ms, 10000, 3600000);
+		this.set("claude_logs_scan_interval_ms", clamped);
+	}
+
+	getClaudeConfigDirs(): string | undefined {
+		// Environment variable takes precedence (comma-separated paths)
+		const fromEnv = process.env.CLAUDE_CONFIG_DIR;
+		if (fromEnv) {
+			return fromEnv;
+		}
+		// Config file can also specify dirs
+		if (typeof this.data.claude_config_dirs === "string") {
+			return this.data.claude_config_dirs;
+		}
+		return undefined; // Will use default paths from claude-logs package
+	}
+
+	setClaudeConfigDirs(dirs: string): void {
+		this.set("claude_config_dirs", dirs);
 	}
 
 	getAllSettings(): Record<string, string | number | boolean | undefined> {

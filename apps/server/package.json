@@ -10,6 +10,7 @@
 		"typecheck": "bunx tsc --noEmit"
 	},
 	"dependencies": {
+		"@better-ccflare/claude-logs": "workspace:*",
 		"@better-ccflare/core": "workspace:*",
 		"@better-ccflare/core-di": "workspace:*",
 		"@better-ccflare/database": "workspace:*",

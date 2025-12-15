@@ -1,3 +1,4 @@
+import type { ClaudeLogsService } from "@better-ccflare/claude-logs";
 import { validateNumber } from "@better-ccflare/core";
 import {
 	createAccountAddHandler,
@@ -43,20 +44,36 @@ import {
 import { createRequestsStreamHandler } from "./handlers/requests-stream";
 import { createStatsHandler, createStatsResetHandler } from "./handlers/stats";
 import { createSystemInfoHandler } from "./handlers/system";
+import {
+	createBillingBlocksHandler,
+	createDailyUsageHandler,
+	createMonthlyUsageHandler,
+	createProjectsListHandler,
+	createScanHandler,
+	createSessionUsageHandler,
+	createUsageSummaryHandler,
+} from "./handlers/usage";
 import type { APIContext } from "./types";
 import { errorResponse } from "./utils/http-error";
+
+/**
+ * Extended context with optional Claude logs service
+ */
+export interface APIRouterContext extends APIContext {
+	claudeLogsService?: ClaudeLogsService;
+}
 
 /**
  * API Router that handles all API endpoints
  */
 export class APIRouter {
-	private context: APIContext;
+	private context: APIRouterContext;
 	private handlers: Map<
 		string,
 		(req: Request, url: URL) => Response | Promise<Response>
 	>;
 
-	constructor(context: APIContext) {
+	constructor(context: APIRouterContext) {
 		this.context = context;
 		this.handlers = new Map();
 		this.registerHandlers();
@@ -167,6 +184,36 @@ export class APIRouter {
 			return bulkHandler(req);
 		});
 		this.handlers.set("GET:/api/workspaces", () => workspacesHandler());
+
+		// Register Claude usage handlers (always available, service optional for scan)
+		const claudeLogsRepo = dbOps.getClaudeLogsRepository();
+		const dailyUsageHandler = createDailyUsageHandler(claudeLogsRepo);
+		const monthlyUsageHandler = createMonthlyUsageHandler(claudeLogsRepo);
+		const sessionUsageHandler = createSessionUsageHandler(claudeLogsRepo);
+		const billingBlocksHandler = createBillingBlocksHandler(claudeLogsRepo);
+		const projectsListHandler = createProjectsListHandler(claudeLogsRepo);
+		const usageSummaryHandler = createUsageSummaryHandler(claudeLogsRepo);
+
+		this.handlers.set("GET:/api/usage/daily", (_req, url) =>
+			dailyUsageHandler(url),
+		);
+		this.handlers.set("GET:/api/usage/monthly", (_req, url) =>
+			monthlyUsageHandler(url),
+		);
+		this.handlers.set("GET:/api/usage/sessions", (_req, url) =>
+			sessionUsageHandler(url),
+		);
+		this.handlers.set("GET:/api/usage/blocks", (_req, url) =>
+			billingBlocksHandler(url),
+		);
+		this.handlers.set("GET:/api/usage/projects", () => projectsListHandler());
+		this.handlers.set("GET:/api/usage/summary", () => usageSummaryHandler());
+
+		// Register scan handler only if service is available
+		if (this.context.claudeLogsService) {
+			const scanHandler = createScanHandler(this.context.claudeLogsService);
+			this.handlers.set("POST:/api/usage/scan", () => scanHandler());
+		}
 	}
 
 	/**
