@@ -10,11 +10,20 @@ services:
       - better-ccflare-data:/data
       # Optional: mount custom config
       # - ./config:/app/config:ro
+      # Optional: mount Claude Code logs for usage analysis (read-only)
+      # Uncomment to enable historical usage tracking from local Claude Code sessions
+      # - ${HOME}/.claude:/host-claude:ro
+      # - ${HOME}/.config/claude:/host-config-claude:ro
     environment:
       - NODE_ENV=production
       - BETTER_CCFLARE_DB_PATH=/data/better-ccflare.db
       # Optional: configure logging
       # - LOG_LEVEL=info
+      # Optional: Claude logs configuration (uncomment if mounting Claude logs volumes)
+      # - CLAUDE_CONFIG_DIR=/host-claude,/host-config-claude
+      # - CLAUDE_LOGS_ENABLED=true
+      # - CLAUDE_LOGS_WATCH=true
+      # - CLAUDE_LOGS_SCAN_ON_STARTUP=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

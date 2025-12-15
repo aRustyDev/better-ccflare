@@ -8,6 +8,7 @@ import { ensureSchema, runMigrations } from "./migrations";
 import { resolveDbPath } from "./paths";
 import { AccountRepository } from "./repositories/account.repository";
 import { AgentPreferenceRepository } from "./repositories/agent-preference.repository";
+import { ClaudeLogsRepository } from "./repositories/claude-logs.repository";
 import { OAuthRepository } from "./repositories/oauth.repository";
 import {
 	type RequestData,
@@ -130,6 +131,7 @@ export class DatabaseOperations implements StrategyStore, Disposable {
 	private strategy: StrategyRepository;
 	private stats: StatsRepository;
 	private agentPreferences: AgentPreferenceRepository;
+	private claudeLogs: ClaudeLogsRepository;
 
 	constructor(
 		dbPath?: string,
@@ -177,6 +179,7 @@ export class DatabaseOperations implements StrategyStore, Disposable {
 		this.strategy = new StrategyRepository(this.db);
 		this.stats = new StatsRepository(this.db);
 		this.agentPreferences = new AgentPreferenceRepository(this.db);
+		this.claudeLogs = new ClaudeLogsRepository(this.db);
 	}
 
 	setRuntimeConfig(runtime: RuntimeConfig): void {
@@ -611,5 +614,12 @@ export class DatabaseOperations implements StrategyStore, Disposable {
 	 */
 	getStatsRepository(): StatsRepository {
 		return this.stats;
+	}
+
+	/**
+	 * Get the Claude logs repository for usage analysis
+	 */
+	getClaudeLogsRepository(): ClaudeLogsRepository {
+		return this.claudeLogs;
 	}
 }

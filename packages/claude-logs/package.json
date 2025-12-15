@@ -1,0 +1,16 @@
+{
+	"name": "@better-ccflare/claude-logs",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@better-ccflare/types": "workspace:*",
+		"@better-ccflare/logger": "workspace:*"
+	}
+}

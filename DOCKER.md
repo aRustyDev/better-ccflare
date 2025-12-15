@@ -47,6 +47,16 @@ Docker will automatically pull the correct image for your architecture.
 - `NODE_ENV` - Environment mode (default: `production`)
 - `LOG_LEVEL` - Logging level (optional)
 
+#### Claude Logs Environment Variables
+
+These variables configure the Claude Code usage log parsing feature:
+
+- `CLAUDE_CONFIG_DIR` - Comma-separated paths to Claude config directories inside the container (e.g., `/host-claude,/host-config-claude`)
+- `CLAUDE_LOGS_ENABLED` - Enable/disable Claude logs parsing (`true`/`false`, default: `true`)
+- `CLAUDE_LOGS_WATCH` - Enable file watching for real-time updates (`true`/`false`, default: `false`)
+- `CLAUDE_LOGS_SCAN_ON_STARTUP` - Scan logs when server starts (`true`/`false`, default: `true`)
+- `CLAUDE_LOGS_SCAN_INTERVAL_MS` - Interval for periodic scans in milliseconds (default: `60000`)
+
 ### Volume Mounts
 
 The container uses `/data` for persistent storage. Mount this volume to persist your database:
@@ -60,6 +70,125 @@ Or with docker-compose (already configured):
 ```yaml
 volumes:
   - better-ccflare-data:/data
+```
+
+## Claude Code Usage Logs
+
+better-ccflare can parse Claude Code's local JSONL log files to provide historical usage analysis. This feature tracks token usage, costs, and sessions from your local Claude Code installations.
+
+### How It Works
+
+Claude Code stores conversation logs in JSONL files at:
+- `~/.claude/projects/{project}/{sessionId}.jsonl` (legacy path)
+- `~/.config/claude/projects/{project}/{sessionId}.jsonl` (XDG path)
+
+By mounting these directories into the Docker container, better-ccflare can read and analyze your usage history.
+
+### Basic Setup
+
+Add Claude log directories as read-only volume mounts:
+
+```yaml
+# docker-compose.yml
+services:
+  better-ccflare:
+    image: ghcr.io/tombii/better-ccflare:latest
+    volumes:
+      - better-ccflare-data:/data
+      # Mount Claude logs from host (read-only)
+      - ${HOME}/.claude:/host-claude:ro
+      - ${HOME}/.config/claude:/host-config-claude:ro
+    environment:
+      - BETTER_CCFLARE_DB_PATH=/data/better-ccflare.db
+      # Tell the server where to find Claude logs
+      - CLAUDE_CONFIG_DIR=/host-claude,/host-config-claude
+      - CLAUDE_LOGS_ENABLED=true
+      - CLAUDE_LOGS_SCAN_ON_STARTUP=true
+```
+
+Or with `docker run`:
+
+```bash
+docker run -d \
+  --name better-ccflare \
+  -p 8080:8080 \
+  -v better-ccflare-data:/data \
+  -v ~/.claude:/host-claude:ro \
+  -v ~/.config/claude:/host-config-claude:ro \
+  -e CLAUDE_CONFIG_DIR=/host-claude,/host-config-claude \
+  -e CLAUDE_LOGS_ENABLED=true \
+  -e CLAUDE_LOGS_SCAN_ON_STARTUP=true \
+  ghcr.io/tombii/better-ccflare:latest
+```
+
+### Configuration Options
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `CLAUDE_CONFIG_DIR` | - | Comma-separated paths to Claude config directories inside the container |
+| `CLAUDE_LOGS_ENABLED` | `true` | Enable/disable the Claude logs feature |
+| `CLAUDE_LOGS_WATCH` | `false` | Watch for file changes in real-time |
+| `CLAUDE_LOGS_SCAN_ON_STARTUP` | `true` | Scan all logs when the server starts |
+| `CLAUDE_LOGS_SCAN_INTERVAL_MS` | `60000` | Interval between periodic scans (milliseconds) |
+
+### Accessing Usage Data
+
+Once configured, access your usage data through the API:
+
+- `GET /api/usage/daily` - Daily aggregated usage
+- `GET /api/usage/monthly` - Monthly aggregated usage
+- `GET /api/usage/sessions` - Session-based usage
+- `GET /api/usage/blocks` - 5-hour billing block usage
+- `GET /api/usage/projects` - List of projects
+- `GET /api/usage/summary` - Overall usage summary
+- `POST /api/usage/scan` - Manually trigger a scan
+
+### Multiple Machines
+
+To aggregate logs from multiple machines, sync the Claude log directories to your Docker host:
+
+```bash
+# Example: rsync logs from remote machines to a central location
+rsync -avz user@machine1:~/.claude/projects/ ~/claude-logs/machine1/
+rsync -avz user@machine2:~/.claude/projects/ ~/claude-logs/machine2/
+```
+
+Then mount the aggregated directory:
+
+```yaml
+volumes:
+  - ~/claude-logs:/host-claude:ro
+environment:
+  - CLAUDE_CONFIG_DIR=/host-claude
+```
+
+### Troubleshooting
+
+**Logs not being detected:**
+```bash
+# Verify the volume mount is correct
+docker exec better-ccflare ls -la /host-claude
+
+# Check if JSONL files exist
+docker exec better-ccflare find /host-claude -name "*.jsonl" | head -10
+
+# Manually trigger a scan and check the response
+curl -X POST http://localhost:8080/api/usage/scan
+```
+
+**Permission issues:**
+```bash
+# Ensure the files are readable inside the container
+docker exec better-ccflare cat /host-claude/projects/*/some-session.jsonl | head -1
+```
+
+The volume mounts use `:ro` (read-only) for security - better-ccflare only reads the log files, never modifies them.
+
+**Scan not finding data:**
+
+Check that your Claude log files are in the expected format. Each line should be valid JSON with fields like:
+```json
+{"uuid":"...","sessionId":"...","timestamp":"...","message":{"role":"user|assistant","model":"...","usage":{...}},"costUSD":0.0}
 ```
 
 ## Managing Accounts
