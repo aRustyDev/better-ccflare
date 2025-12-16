@@ -1,0 +1,8 @@
+# Local settings (user-specific)
+settings.local.json
+
+# TDD-Guard test results cache
+tdd-guard/
+
+# Quality check cache
+hooks/tsconfig-cache.json

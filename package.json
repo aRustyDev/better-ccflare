@@ -13,6 +13,8 @@
 		"server": "bun run apps/server/src/server.ts",
 		"dev:server": "bun run --hot apps/server/src/server.ts",
 		"dev:dashboard": "bun --hot packages/dashboard-web/src/index.tsx",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"typecheck": "bunx tsc --noEmit",
 		"build": "bun run build:dashboard && bun run build:tui",
 		"build:dashboard": "bun run --cwd packages/dashboard-web build",
@@ -28,7 +30,9 @@
 		"@biomejs/biome": "2.1.2",
 		"@types/bun": "latest",
 		"bun-types": "latest",
-		"typescript": "^5.0.0"
+		"tdd-guard-vitest": "^0.1.6",
+		"typescript": "^5.0.0",
+		"vitest": "^4.0.15"
 	},
 	"overrides": {
 		"react": "^19.0.0",
