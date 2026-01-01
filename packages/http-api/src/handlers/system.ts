@@ -4,6 +4,18 @@ import {
 	jsonResponse,
 } from "../utils/http-error";
 
+export function createPackageManagerHandler() {
+	return async (): Promise<Response> => {
+		let packageManager = "npm";
+		if (process.versions.bun) {
+			packageManager = "bun";
+		}
+		const isBinary = detectRunningFromBinary();
+		const isDocker = detectRunningInDocker();
+		return jsonResponse({ packageManager, isBinary, isDocker });
+	};
+}
+
 export function createSystemInfoHandler() {
 	return async (): Promise<Response> => {
 		try {
